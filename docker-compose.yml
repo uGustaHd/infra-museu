@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # BANCO DE DADOS
+  db:
+    image: mysql:8
+    container_name: museu_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: museu
+      MYSQL_USER: museu_user
+      MYSQL_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    networks:
+      - museu_network
+
+  # API SPRING BOOT
+  api:
+    build: ../API-Museu/museu-api
+    container_name: museu_api
+    restart: always
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/museu?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: museu_user
+      SPRING_DATASOURCE_PASSWORD: 1234
+    ports:
+      - "8080:8080"
+    networks:
+      - museu_network
+
+  # FRONTEND REACT
+  frontend:
+    build: ../Museu-Font-End
+    container_name: museu_frontend
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    networks:
+      - museu_network
+
+# VOLUMES (para dados persistirem)
+volumes:
+  db_data:
+
+# REDE INTERNA
+networks:
+  museu_network:
+    driver: bridge
